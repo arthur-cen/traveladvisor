@@ -36,7 +36,6 @@ export default function TravelMap({ origin, destination }: Props) {
           ? [destination.lng, destination.lat]
           : [-95.7, 37.1],
         zoom: destination ? 9 : 3,
-        attributionControl: false,
       });
 
       mapRef.current.addControl(
@@ -68,7 +67,7 @@ export default function TravelMap({ origin, destination }: Props) {
       markersRef.current = [];
 
       if (destination) {
-        const el = createMarkerEl('#FF5A5F', '📍');
+        const el = createMarkerEl('#FF5A5F', '📍', `Destination: ${destination?.placeName ?? 'destination'}`);
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([destination.lng, destination.lat])
           .addTo(mapRef.current);
@@ -76,7 +75,7 @@ export default function TravelMap({ origin, destination }: Props) {
       }
 
       if (origin) {
-        const el = createMarkerEl('#767676', '🏠');
+        const el = createMarkerEl('#484848', '🏠', `Origin: ${origin?.placeName ?? 'origin'}`);
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([origin.lng, origin.lat])
           .addTo(mapRef.current);
@@ -102,7 +101,7 @@ export default function TravelMap({ origin, destination }: Props) {
 
   return (
     <div className="relative w-full h-full">
-      <div ref={containerRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full" role="img" aria-label="Interactive trip map" />
 
       {!hasDestination && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-bg-light/80 backdrop-blur-sm pointer-events-none">
@@ -115,8 +114,10 @@ export default function TravelMap({ origin, destination }: Props) {
   );
 }
 
-function createMarkerEl(color: string, emoji: string): HTMLDivElement {
+function createMarkerEl(color: string, emoji: string, label: string): HTMLDivElement {
   const el = document.createElement('div');
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', label);
   el.style.cssText = `
     width: 32px; height: 32px;
     border-radius: 50% 50% 50% 0;

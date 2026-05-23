@@ -13,9 +13,7 @@ export default function ItineraryPanel({ itinerary, isStreaming, streamText }: P
   if (!itinerary && !isStreaming) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8 gap-4">
-        <div className="w-16 h-16 rounded-full bg-border flex items-center justify-center text-2xl">
-          🗺️
-        </div>
+        <div aria-hidden="true" className="w-16 h-16 rounded-full bg-border flex items-center justify-center text-2xl">🗺️</div>
         <div>
           <p className="font-semibold text-hof text-sm">Your itinerary will appear here</p>
           <p className="text-foggy text-xs mt-1">
@@ -30,8 +28,8 @@ export default function ItineraryPanel({ itinerary, isStreaming, streamText }: P
     return (
       <div className="flex flex-col h-full">
         <div className="px-4 py-3 border-b border-border bg-white">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
+          <div className="flex items-center gap-2" aria-live="polite" aria-label="Building itinerary">
+            <div className="flex gap-1" aria-hidden="true">
               <span className="w-2 h-2 rounded-full bg-rausch animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-2 h-2 rounded-full bg-rausch animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-2 h-2 rounded-full bg-rausch animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -80,7 +78,7 @@ function SummarySection({ summary }: { summary: NonNullable<Itinerary['summary']
   return (
     <div className="border border-border rounded-card bg-white p-4 space-y-2">
       <h3 className="font-semibold text-hof text-sm flex items-center gap-1.5">
-        <span>📋</span> Trip Summary
+        <span aria-hidden="true">📋</span> Trip Summary
       </h3>
       {summary.estimatedCost && (
         <SummaryRow icon="💰" label="Est. cost" value={summary.estimatedCost} />
@@ -95,8 +93,8 @@ function SummarySection({ summary }: { summary: NonNullable<Itinerary['summary']
         <div className="text-xs">
           <span className="font-medium text-hof flex items-center gap-1 mb-1">🎟️ Book in advance</span>
           <ul className="pl-3 space-y-0.5">
-            {summary.bookInAdvance.map((item, i) => (
-              <li key={i} className="text-foggy list-disc">{item}</li>
+            {summary.bookInAdvance.map((item) => (
+              <li key={item} className="text-foggy list-disc">{item}</li>
             ))}
           </ul>
         </div>
@@ -109,7 +107,7 @@ function PracticalSection({ info }: { info: NonNullable<Itinerary['practicalInfo
   return (
     <div className="border border-border rounded-card bg-white p-4 space-y-2">
       <h3 className="font-semibold text-hof text-sm flex items-center gap-1.5">
-        <span>📋</span> Practical Info
+        <span aria-hidden="true">📋</span> Practical Info
       </h3>
       {info.estimatedCost && (
         <SummaryRow icon="💰" label="Est. cost" value={info.estimatedCost} />
@@ -121,8 +119,8 @@ function PracticalSection({ info }: { info: NonNullable<Itinerary['practicalInfo
         <div className="text-xs">
           <span className="font-medium text-hof flex items-center gap-1 mb-1">💡 Tips</span>
           <ul className="pl-3 space-y-0.5">
-            {info.tips.map((tip, i) => (
-              <li key={i} className="text-foggy list-disc">{tip}</li>
+            {info.tips.map((tip) => (
+              <li key={tip} className="text-foggy list-disc">{tip}</li>
             ))}
           </ul>
         </div>
@@ -134,7 +132,7 @@ function PracticalSection({ info }: { info: NonNullable<Itinerary['practicalInfo
 function SummaryRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <p className="text-xs text-foggy">
-      <span className="mr-1">{icon}</span>
+      <span aria-hidden="true" className="mr-1">{icon}</span>
       <span className="font-medium text-hof">{label}: </span>
       {value}
     </p>

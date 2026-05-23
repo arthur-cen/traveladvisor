@@ -1,92 +1,32 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { ChatMessage, Itinerary, TripAnswers } from '@/lib/types';
-import { FOLLOW_UP_QUESTIONS } from '@/lib/questions';
+import type { Itinerary, TripAnswers } from '@/lib/types';
 import { parseItinerary } from '@/lib/parseItinerary';
-import ChatMessageBubble from './ChatMessage';
-import ChatInput from './ChatInput';
 
 type Props = {
-  tripBasics: Pick<TripAnswers, 'origin' | 'destination' | 'travelDates' | 'days'>;
+  tripAnswers: TripAnswers;
   onItineraryReady: (itinerary: Itinerary) => void;
   onStreamUpdate: (text: string) => void;
   onStreamingChange: (streaming: boolean) => void;
 };
 
-function makeId() {
-  return Math.random().toString(36).slice(2);
-}
+type Phase = 'generating' | 'done' | 'error';
 
-export default function ChatPanel({ tripBasics, onItineraryReady, onStreamUpdate, onStreamingChange }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [answers, setAnswers] = useState<Partial<TripAnswers>>({ ...tripBasics });
-  const [queueIndex, setQueueIndex] = useState(0);
-  const [phase, setPhase] = useState<'qa' | 'generating' | 'done'>('qa');
-  const scrollRef = useRef<HTMLDivElement>(null);
+export default function ChatPanel({ tripAnswers, onItineraryReady, onStreamUpdate, onStreamingChange }: Props) {
+  const [phase, setPhase] = useState<Phase>('generating');
+  const [retrying, setRetrying] = useState(false);
+  const hasStarted = useRef(false);
 
-  const applicableQuestions = FOLLOW_UP_QUESTIONS.filter(
-    (q) => !q.when || q.when(answers)
-  );
-
-  // Post the first question on mount
   useEffect(() => {
-    const first = getNextQuestion(0, { ...tripBasics });
-    if (first) {
-      setMessages([{ id: makeId(), role: 'ai', content: first.text }]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+    generate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
-
-  function getNextQuestion(idx: number, currentAnswers: Partial<TripAnswers>) {
-    const remaining = FOLLOW_UP_QUESTIONS.slice(idx).filter(
-      (q) => !q.when || q.when(currentAnswers)
-    );
-    return remaining[0] ?? null;
-  }
-
-  async function handleSend(text: string) {
-    if (phase !== 'qa') return;
-
-    const currentQuestion = getNextQuestion(queueIndex, answers);
-    if (!currentQuestion) return;
-
-    const newAnswers: Partial<TripAnswers> = { ...answers, [currentQuestion.key]: text };
-    setAnswers(newAnswers);
-
-    const userMsg: ChatMessage = { id: makeId(), role: 'user', content: text };
-
-    // Find the next applicable question after recording this answer
-    const nextQuestion = FOLLOW_UP_QUESTIONS.slice(
-      FOLLOW_UP_QUESTIONS.indexOf(currentQuestion) + 1
-    ).find((q) => !q.when || q.when(newAnswers));
-
-    const nextIndex = nextQuestion
-      ? FOLLOW_UP_QUESTIONS.indexOf(nextQuestion)
-      : FOLLOW_UP_QUESTIONS.length;
-
-    setQueueIndex(nextIndex);
-
-    if (nextQuestion) {
-      const aiMsg: ChatMessage = { id: makeId(), role: 'ai', content: nextQuestion.text };
-      setMessages((prev) => [...prev, userMsg, aiMsg]);
-    } else {
-      const thinkingMsg: ChatMessage = {
-        id: makeId(),
-        role: 'ai',
-        content: '✈️ Great! Planning your trip now — this will take a moment…',
-      };
-      setMessages((prev) => [...prev, userMsg, thinkingMsg]);
-      setPhase('generating');
-      await generateItinerary(newAnswers as TripAnswers);
-    }
-  }
-
-  async function generateItinerary(finalAnswers: TripAnswers) {
+  async function generate() {
+    setPhase('generating');
     onStreamingChange(true);
     let accumulated = '';
 
@@ -94,7 +34,7 @@ export default function ChatPanel({ tripBasics, onItineraryReady, onStreamUpdate
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers: finalAnswers }),
+        body: JSON.stringify({ answers: tripAnswers }),
       });
 
       if (!res.ok || !res.body) throw new Error('API error');
@@ -114,55 +54,85 @@ export default function ChatPanel({ tripBasics, onItineraryReady, onStreamUpdate
       if (parsed) {
         onItineraryReady(parsed);
       } else {
-        // Fallback: show raw text as a single-day itinerary with one activity
         onItineraryReady({
           type: 'single-day',
-          destination: finalAnswers.destination,
-          dates: finalAnswers.travelDates,
+          destination: tripAnswers.destination,
+          dates: tripAnswers.travelDates,
           days: [{ number: 1, activities: [{ time: 'Morning', name: 'Your Itinerary', description: accumulated.slice(0, 200) + '…' }] }],
         });
       }
       setPhase('done');
     } catch {
       onStreamingChange(false);
-      setMessages((prev) => [
-        ...prev,
-        { id: makeId(), role: 'ai', content: '⚠️ Something went wrong generating your itinerary. Please try again.' },
-      ]);
-      setPhase('qa');
+      setPhase('error');
+    } finally {
+      setRetrying(false);
     }
   }
 
+  async function handleRetry() {
+    setRetrying(true);
+    hasStarted.current = false;
+    await generate();
+  }
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border bg-white flex-shrink-0">
-        <h2 className="font-bold text-hof text-sm">TravelAdvisor</h2>
+    <div className="flex flex-col h-full bg-white">
+      <div className="px-4 py-3 border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span aria-hidden="true" className="text-rausch">✈️</span>
+          <h2 className="font-bold text-hof text-sm">TravelAdvisor</h2>
+        </div>
         <p className="text-foggy text-xs">
-          {tripBasics.destination} · {tripBasics.travelDates} · {tripBasics.days} {parseInt(tripBasics.days) === 1 ? 'day' : 'days'}
+          {tripAnswers.origin} → {tripAnswers.destination}
+          {' · '}{tripAnswers.travelDates}
+          {' · '}{tripAnswers.days} {parseInt(tripAnswers.days) === 1 ? 'day' : 'days'}
         </p>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-        {messages.map((msg) => (
-          <ChatMessageBubble key={msg.id} message={msg} />
-        ))}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
         {phase === 'generating' && (
-          <div className="flex gap-1 pl-9">
-            <span className="w-2 h-2 rounded-full bg-border animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-2 h-2 rounded-full bg-border animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-2 h-2 rounded-full bg-border animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div role="status" aria-live="polite" aria-label="Generating itinerary" className="flex flex-col items-center gap-4">
+            <div className="flex gap-1.5" aria-hidden="true">
+              <span className="w-2.5 h-2.5 rounded-full bg-rausch animate-bounce motion-reduce:animate-none" style={{ animationDelay: '0ms' }} />
+              <span className="w-2.5 h-2.5 rounded-full bg-rausch animate-bounce motion-reduce:animate-none" style={{ animationDelay: '150ms' }} />
+              <span className="w-2.5 h-2.5 rounded-full bg-rausch animate-bounce motion-reduce:animate-none" style={{ animationDelay: '300ms' }} />
+            </div>
+            <div>
+              <p className="font-semibold text-hof text-sm">Planning your trip…</p>
+              <p className="text-foggy text-xs mt-1">Building your {tripAnswers.destination} itinerary</p>
+            </div>
+          </div>
+        )}
+
+        {phase === 'done' && (
+          <div role="status" aria-live="polite" className="flex flex-col items-center gap-4">
+            <span aria-hidden="true" className="text-4xl">🗺️</span>
+            <div>
+              <p className="font-semibold text-hof text-sm">Itinerary ready!</p>
+              <p className="text-foggy text-xs mt-1">Review your plan in the panel →</p>
+            </div>
+          </div>
+        )}
+
+        {phase === 'error' && (
+          <div role="alert" aria-live="assertive" className="flex flex-col items-center gap-4">
+            <span aria-hidden="true" className="text-3xl">⚠️</span>
+            <div>
+              <p className="font-semibold text-hof text-sm">Something went wrong</p>
+              <p className="text-foggy text-xs mt-1 mb-3">Could not generate your itinerary</p>
+              <button
+                onClick={handleRetry}
+                disabled={retrying}
+                aria-busy={retrying}
+                className="px-4 py-2 bg-rausch text-white text-xs font-semibold rounded-xl hover:bg-kazan disabled:opacity-60 transition-colors"
+              >
+                {retrying ? 'Retrying…' : 'Try again'}
+              </button>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        disabled={phase !== 'qa'}
-        placeholder={phase === 'generating' ? 'Generating your itinerary…' : 'Type your answer…'}
-      />
     </div>
   );
 }

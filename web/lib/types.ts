@@ -1,6 +1,8 @@
 export type TripAnswers = {
   origin: string;
   destination: string;
+  departureDate: string;
+  returnDate: string;
   travelDates: string;
   days: string;
   travelers: string;
@@ -71,4 +73,4 @@ export type Question = {
   when?: (answers: Partial<TripAnswers>) => boolean;
 };
 
-export type AppPhase = 'form' | 'qa' | 'generating' | 'done';
+export type AppPhase = 'form' | 'generating' | 'done';

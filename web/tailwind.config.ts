@@ -9,13 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        rausch: '#FF5A5F',
-        kazan: '#FF7A59',
-        babu: '#00A699',
-        hof: '#484848',
-        foggy: '#767676',
-        border: '#EBEBEB',
-        'bg-light': '#F7F7F7',
+        rausch: 'var(--rausch)',
+        kazan: 'var(--kazan)',
+        babu: 'var(--babu)',
+        hof: 'var(--hof)',
+        foggy: 'var(--foggy)',
+        border: 'var(--border)',
+        'bg-light': 'var(--bg-light)',
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
