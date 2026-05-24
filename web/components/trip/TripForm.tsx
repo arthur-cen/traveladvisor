@@ -19,7 +19,7 @@ const TRIP_STYLES = [
 
 const TRANSPORTS = [
   { label: 'Walking', value: 'walking' },
-  { label: 'Public transit', value: 'public transit' },
+  { label: 'Transit', value: 'public transit' },
   { label: 'Car', value: 'car' },
   { label: 'Train', value: 'train' },
   { label: 'Bike', value: 'bike' },
@@ -109,175 +109,343 @@ export default function TripForm({ onSubmit, onDestinationGeocoded, onOriginGeoc
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
-      <div className="px-4 pt-4 pb-2 flex-shrink-0 flex items-center gap-2">
-        <span aria-hidden="true" className="text-rausch text-lg">✈️</span>
-        <h1 className="font-extrabold text-hof text-base tracking-tight">TravelAdvisor</h1>
-      </div>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 px-4">
-        <div className="flex-1 overflow-y-auto space-y-4 pb-3 pr-0.5">
-
-          <div>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="From" icon="🏠" htmlFor="trip-origin" required>
-                <input id="trip-origin" type="text" value={origin} placeholder="New York, NY"
-                  aria-required="true" onChange={e => setOrigin(e.target.value)}
-                  onBlur={handleOriginBlur} className={inputCls} />
-              </Field>
-              <Field label="To" icon="📍" htmlFor="trip-destination" required>
-                <input id="trip-destination" type="text" value={destination} placeholder="Paris, France"
-                  aria-required="true" onChange={e => setDestination(e.target.value)}
-                  onBlur={handleDestinationBlur} className={inputCls} />
-              </Field>
-            </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0 px-5">
+        {/* Mission Brief heading */}
+        <div className="flex-shrink-0 pt-1 pb-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="display-serif text-lg leading-none" style={{ color: 'var(--cream-text)' }}>
+              Mission Brief
+            </h2>
+            <span className="exp-eyebrow" style={{ color: 'var(--bone)' }}>§ 01</span>
           </div>
+          <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--cream-dim)' }}>
+            Furnish the bureau with the particulars of your forthcoming expedition.
+          </p>
+        </div>
 
-          <div>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Departure" icon="📅" htmlFor="trip-departure" required>
-                <input id="trip-departure" type="date" value={departureDate}
-                  aria-required="true" onChange={e => setDepartureDate(e.target.value)} className={inputCls} />
-              </Field>
-              <Field label="Return" icon="🏁" htmlFor="trip-return" required>
-                <input id="trip-return" type="date" value={returnDate} min={departureDate}
+        <div className="flex-1 overflow-y-auto space-y-5 pb-3 pt-3 pr-1">
+
+          {/* Route */}
+          <SectionBlock eyebrow="I · Route">
+            <div className="grid grid-cols-1 gap-3">
+              <ExpField label="Origin" htmlFor="trip-origin" required marker="A">
+                <input
+                  id="trip-origin"
+                  type="text"
+                  value={origin}
+                  placeholder="New York, NY"
+                  aria-required="true"
+                  onChange={e => setOrigin(e.target.value)}
+                  onBlur={handleOriginBlur}
+                  className="exp-input"
+                />
+              </ExpField>
+              <ExpField label="Destination" htmlFor="trip-destination" required marker="B">
+                <input
+                  id="trip-destination"
+                  type="text"
+                  value={destination}
+                  placeholder="Paris, France"
+                  aria-required="true"
+                  onChange={e => setDestination(e.target.value)}
+                  onBlur={handleDestinationBlur}
+                  className="exp-input"
+                />
+              </ExpField>
+            </div>
+          </SectionBlock>
+
+          <ExpRule />
+
+          {/* Dates */}
+          <SectionBlock eyebrow="II · Window">
+            <div className="grid grid-cols-2 gap-3">
+              <ExpField label="Depart" htmlFor="trip-departure" required>
+                <input
+                  id="trip-departure"
+                  type="date"
+                  value={departureDate}
+                  aria-required="true"
+                  onChange={e => setDepartureDate(e.target.value)}
+                  className="exp-input"
+                />
+              </ExpField>
+              <ExpField label="Return" htmlFor="trip-return" required>
+                <input
+                  id="trip-return"
+                  type="date"
+                  value={returnDate}
+                  min={departureDate}
                   aria-required="true"
                   aria-describedby={dateRangeInvalid ? 'date-range-error' : undefined}
                   onChange={e => setReturnDate(e.target.value)}
-                  className={`${inputCls} ${dateRangeInvalid ? 'border-rausch ring-1 ring-rausch' : ''}`} />
-              </Field>
+                  className={`exp-input ${dateRangeInvalid ? 'invalid' : ''}`}
+                />
+              </ExpField>
             </div>
             {dateRangeInvalid && (
-              <p id="date-range-error" role="alert" className="mt-1 text-xs text-rausch">
-                Return date must be after departure date
+              <p
+                id="date-range-error"
+                role="alert"
+                className="mt-2 text-xs"
+                style={{ color: 'var(--danger)' }}
+              >
+                ⚠ Return must follow departure.
               </p>
             )}
             {days > 0 && !dateRangeInvalid && (
-              <p className="mt-1.5 text-xs text-foggy" aria-live="polite">
-                <span className="font-semibold text-babu">{days} {days === 1 ? 'day' : 'days'}</span>
-                {' · '}{formatTravelDates(departureDate, returnDate)}
+              <p
+                className="mt-2 text-xs flex items-baseline gap-2"
+                style={{ color: 'var(--cream-dim)' }}
+                aria-live="polite"
+              >
+                <span
+                  className="display-serif text-xl leading-none"
+                  style={{ color: 'var(--amber)' }}
+                >
+                  {days}
+                </span>
+                <span className="exp-eyebrow" style={{ color: 'var(--amber)' }}>
+                  {days === 1 ? 'Day' : 'Days'}
+                </span>
+                <span style={{ color: 'var(--charcoal-light)' }}>·</span>
+                <span className="mono text-[11px]" style={{ color: 'var(--bone)' }}>
+                  {formatTravelDates(departureDate, returnDate)}
+                </span>
               </p>
             )}
-          </div>
+          </SectionBlock>
 
-          <Section label="Who's going?" htmlFor="trip-travelers" required>
-            <select id="trip-travelers" value={travelers} aria-required="true"
-              onChange={e => setTravelers(e.target.value)} className={inputCls}>
-              <option value="">Select…</option>
-              <option value="solo">Solo</option>
-              <option value="couple">Couple</option>
-              <option value="2 adults">2 adults</option>
-              <option value="family with kids">Family with kids</option>
-              <option value="small group (3–4)">Small group (3–4)</option>
-              <option value="large group (5+)">Large group (5+)</option>
-            </select>
-          </Section>
+          <ExpRule />
 
-          <Section label="Budget per person" htmlFor="trip-budget" required>
-            <select id="trip-budget" value={budget} aria-required="true"
-              onChange={e => setBudget(e.target.value as TripAnswers['budget'])} className={inputCls}>
-              <option value="">Select…</option>
-              <option value="budget">Budget-friendly (under $30/activity)</option>
-              <option value="mid-range">Mid-range ($30–$100/activity)</option>
-              <option value="luxury">Luxury (premium, no limit)</option>
-            </select>
-          </Section>
-
-          <ChipGroup label="Trip style" required>
-            <div className="flex flex-wrap gap-1.5">
-              {TRIP_STYLES.map(s => (
-                <ChipToggle key={s.value} label={s.label}
-                  active={tripStyle.includes(s.value)}
-                  onToggle={() => setTripStyle(toggleChip(tripStyle, s.value))} />
-              ))}
-            </div>
-          </ChipGroup>
-
-          <ChipGroup label="Getting around" required>
-            <div className="flex flex-wrap gap-1.5">
-              {TRANSPORTS.map(t => (
-                <ChipToggle key={t.value} label={t.label}
-                  active={transport.includes(t.value)}
-                  onToggle={() => setTransport(toggleChip(transport, t.value))} />
-              ))}
-            </div>
-          </ChipGroup>
-
-          {showAccommodation && (
-            <Section label="Accommodation" htmlFor="trip-accommodation">
-              <select id="trip-accommodation" value={accommodation}
-                onChange={e => setAccommodation(e.target.value)} className={inputCls}>
-                <option value="">Select…</option>
-                <option value="hotel">Hotel</option>
-                <option value="Airbnb">Airbnb</option>
-                <option value="hostel">Hostel</option>
-                <option value="camping">Camping</option>
+          {/* Party & Budget */}
+          <SectionBlock eyebrow="III · Party">
+            <ExpField label="Travelers" htmlFor="trip-travelers" required>
+              <select
+                id="trip-travelers"
+                value={travelers}
+                aria-required="true"
+                onChange={e => setTravelers(e.target.value)}
+                className="exp-input"
+              >
+                <option value="">Select party…</option>
+                <option value="solo">Solo</option>
+                <option value="couple">Couple</option>
+                <option value="2 adults">Two adults</option>
+                <option value="family with kids">Family with kids</option>
+                <option value="small group (3–4)">Small group (3–4)</option>
+                <option value="large group (5+)">Large group (5+)</option>
               </select>
-            </Section>
-          )}
+            </ExpField>
 
-          {showFitness && (
-            <Section label="Fitness / activity level" htmlFor="trip-fitness">
-              <select id="trip-fitness" value={fitnessLevel}
-                onChange={e => setFitnessLevel(e.target.value as TripAnswers['fitnessLevel'])} className={inputCls}>
-                <option value="">Select…</option>
-                <option value="easy">Easy — light walking</option>
-                <option value="moderate">Moderate — some hiking</option>
-                <option value="strenuous">Strenuous — intense activity</option>
+            <ExpField label="Budget per person" htmlFor="trip-budget" required>
+              <select
+                id="trip-budget"
+                value={budget}
+                aria-required="true"
+                onChange={e => setBudget(e.target.value as TripAnswers['budget'])}
+                className="exp-input"
+              >
+                <option value="">Select tier…</option>
+                <option value="budget">⚲ Frugal — under $30 / activity</option>
+                <option value="mid-range">⚲⚲ Mid-range — $30–$100</option>
+                <option value="luxury">⚲⚲⚲ Luxury — no limit</option>
               </select>
-            </Section>
+            </ExpField>
+          </SectionBlock>
+
+          <ExpRule />
+
+          {/* Style */}
+          <SectionBlock eyebrow="IV · Disposition">
+            <ChipGroup label="Expedition style" required>
+              <div className="flex flex-wrap gap-1.5">
+                {TRIP_STYLES.map(s => (
+                  <ChipToggle
+                    key={s.value}
+                    label={s.label}
+                    active={tripStyle.includes(s.value)}
+                    onToggle={() => setTripStyle(toggleChip(tripStyle, s.value))}
+                  />
+                ))}
+              </div>
+            </ChipGroup>
+
+            <ChipGroup label="Means of conveyance" required>
+              <div className="flex flex-wrap gap-1.5">
+                {TRANSPORTS.map(t => (
+                  <ChipToggle
+                    key={t.value}
+                    label={t.label}
+                    active={transport.includes(t.value)}
+                    onToggle={() => setTransport(toggleChip(transport, t.value))}
+                  />
+                ))}
+              </div>
+            </ChipGroup>
+          </SectionBlock>
+
+          {(showAccommodation || showFitness || showDietary) && <ExpRule />}
+
+          {(showAccommodation || showFitness || showDietary) && (
+            <SectionBlock eyebrow="V · Provisions">
+              {showAccommodation && (
+                <ExpField label="Lodgings" htmlFor="trip-accommodation">
+                  <select
+                    id="trip-accommodation"
+                    value={accommodation}
+                    onChange={e => setAccommodation(e.target.value)}
+                    className="exp-input"
+                  >
+                    <option value="">Quartermaster's choice…</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="Airbnb">Airbnb</option>
+                    <option value="hostel">Hostel</option>
+                    <option value="camping">Camping</option>
+                  </select>
+                </ExpField>
+              )}
+
+              {showFitness && (
+                <ExpField label="Constitution" htmlFor="trip-fitness">
+                  <select
+                    id="trip-fitness"
+                    value={fitnessLevel}
+                    onChange={e => setFitnessLevel(e.target.value as TripAnswers['fitnessLevel'])}
+                    className="exp-input"
+                  >
+                    <option value="">Select level…</option>
+                    <option value="easy">Easy — light walking</option>
+                    <option value="moderate">Moderate — some hiking</option>
+                    <option value="strenuous">Strenuous — intense activity</option>
+                  </select>
+                </ExpField>
+              )}
+
+              {showDietary && (
+                <ExpField label="Dietary notes" htmlFor="trip-dietary">
+                  <input
+                    id="trip-dietary"
+                    type="text"
+                    value={dietaryRestrictions}
+                    onChange={e => setDietaryRestrictions(e.target.value)}
+                    placeholder="vegetarian, nut allergy…"
+                    className="exp-input"
+                  />
+                </ExpField>
+              )}
+            </SectionBlock>
           )}
 
-          {showDietary && (
-            <Section label="Dietary notes" htmlFor="trip-dietary">
-              <input id="trip-dietary" type="text" value={dietaryRestrictions}
-                onChange={e => setDietaryRestrictions(e.target.value)}
-                placeholder="e.g. vegetarian, nut allergy…" className={inputCls} />
-            </Section>
-          )}
+          <ExpRule />
 
-          <Section label="Anything to avoid? (optional)" htmlFor="trip-avoid">
-            <input id="trip-avoid" type="text" value={thingsToAvoid}
-              onChange={e => setThingsToAvoid(e.target.value)}
-              placeholder="e.g. crowded tourist traps, long walks…" className={inputCls} />
-          </Section>
+          <SectionBlock eyebrow="VI · Caveats">
+            <ExpField label="Avoid (optional)" htmlFor="trip-avoid">
+              <input
+                id="trip-avoid"
+                type="text"
+                value={thingsToAvoid}
+                onChange={e => setThingsToAvoid(e.target.value)}
+                placeholder="tourist traps, crowds, long drives…"
+                className="exp-input"
+              />
+            </ExpField>
+          </SectionBlock>
 
         </div>
 
-        <div className="flex-shrink-0 py-3">
-          <button type="submit" disabled={!isValid} aria-disabled={!isValid}
-            title={!isValid ? 'Fill in all required fields to continue' : undefined}
-            className="w-full py-2.5 rounded-xl bg-rausch hover:bg-kazan disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold text-white text-sm shadow-sm">
-            Plan My Trip →
+        <div className="flex-shrink-0 py-4">
+          <button
+            type="submit"
+            disabled={!isValid}
+            aria-disabled={!isValid}
+            title={!isValid ? 'Complete all required fields to dispatch your brief.' : undefined}
+            className="exp-btn-primary"
+          >
+            <span aria-hidden="true">⛰</span>
+            <span>Chart the Expedition</span>
+            <span aria-hidden="true" className="ml-1">→</span>
           </button>
+          <p
+            className="exp-eyebrow text-center mt-2.5 flex items-center justify-center gap-1.5"
+            style={{ color: 'var(--bone)' }}
+            aria-hidden="true"
+          >
+            <span style={{ color: 'var(--amber)' }}>✦</span>
+            Bureau of Wayfinding
+            <span style={{ color: 'var(--amber)' }}>✦</span>
+          </p>
         </div>
       </form>
     </div>
   );
 }
 
-const inputCls =
-  'w-full px-3 py-2 text-sm text-hof border border-border rounded-xl placeholder:text-foggy ' +
-  'focus:outline-none focus:border-rausch focus:ring-1 focus:ring-rausch transition-colors bg-white';
+/* ─── Subcomponents ──────────────────────────────────────── */
 
-const labelCls = 'text-xs font-semibold text-foggy mb-1.5 uppercase tracking-wider';
+function ExpRule() {
+  return (
+    <div className="exp-rule" aria-hidden="true">
+      <span className="exp-rule-dot" />
+    </div>
+  );
+}
+
+function SectionBlock({
+  eyebrow,
+  children,
+}: { eyebrow: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="exp-eyebrow flex items-center gap-2" style={{ color: 'var(--bone)' }}>
+        <span style={{ color: 'var(--amber)' }} aria-hidden="true">◇</span>
+        {eyebrow}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
 
 function Required() {
   return (
     <>
-      <span aria-hidden="true" className="text-rausch ml-0.5">*</span>
+      <span aria-hidden="true" style={{ color: 'var(--amber)', marginLeft: '0.2rem' }}>*</span>
       <span className="sr-only">(required)</span>
     </>
   );
 }
 
-function Field({ label, icon, htmlFor, required, children }: {
-  label: string; icon: string; htmlFor: string; required?: boolean; children: React.ReactNode;
+function ExpField({
+  label,
+  htmlFor,
+  required,
+  marker,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  required?: boolean;
+  marker?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="text-xs font-semibold text-foggy mb-1 flex items-center gap-1">
-        <span aria-hidden="true">{icon}</span>
+      <label htmlFor={htmlFor} className="exp-label flex items-center gap-2">
+        {marker && (
+          <span
+            aria-hidden="true"
+            className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold"
+            style={{
+              color: 'var(--amber-glow)',
+              border: '1px solid var(--border-amber-strong)',
+              borderRadius: '50%',
+              letterSpacing: 0,
+            }}
+          >
+            {marker}
+          </span>
+        )}
         {label}
         {required && <Required />}
       </label>
@@ -286,36 +454,37 @@ function Field({ label, icon, htmlFor, required, children }: {
   );
 }
 
-function Section({ label, htmlFor, required, children }: {
-  label: string; htmlFor: string; required?: boolean; children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className={`${labelCls} block`}>
-        {label}{required && <Required />}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function ChipGroup({ label, required, children }: {
-  label: string; required?: boolean; children: React.ReactNode;
-}) {
+function ChipGroup({
+  label,
+  required,
+  children,
+}: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <fieldset className="border-none p-0 m-0">
-      <legend className={labelCls}>{label}{required && <Required />}</legend>
+      <legend className="exp-label">
+        {label}
+        {required && <Required />}
+      </legend>
       {children}
     </fieldset>
   );
 }
 
-function ChipToggle({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
+function ChipToggle({
+  label,
+  active,
+  onToggle,
+}: { label: string; active: boolean; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle} aria-pressed={active}
-      className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-        active ? 'bg-rausch text-white border-rausch' : 'bg-white text-foggy border-border hover:border-rausch hover:text-rausch'
-      }`}>
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      className="exp-chip"
+    >
+      {active && (
+        <span aria-hidden="true" style={{ color: 'var(--amber)' }}>✓</span>
+      )}
       {label}
     </button>
   );
