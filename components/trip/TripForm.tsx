@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { GeoPoint, TripAnswers } from '@/lib/types';
+import LocationAutocomplete from './LocationAutocomplete';
 
 type Props = {
   onSubmit: (answers: TripAnswers) => void;
@@ -93,6 +94,16 @@ export default function TripForm({ onSubmit, onDestinationGeocoded, onOriginGeoc
     if (pt) onDestinationGeocoded(pt);
   }
 
+  function handleOriginSelect(pt: GeoPoint) {
+    setOrigin(pt.placeName ?? origin);
+    onOriginGeocoded(pt);
+  }
+
+  function handleDestinationSelect(pt: GeoPoint) {
+    setDestination(pt.placeName ?? destination);
+    onDestinationGeocoded(pt);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid || !budget) return;
@@ -130,27 +141,25 @@ export default function TripForm({ onSubmit, onDestinationGeocoded, onOriginGeoc
           <SectionBlock eyebrow="I · Route">
             <div className="grid grid-cols-1 gap-3">
               <ExpField label="Origin" htmlFor="trip-origin" required marker="A">
-                <input
+                <LocationAutocomplete
                   id="trip-origin"
-                  type="text"
                   value={origin}
                   placeholder="New York, NY"
                   aria-required="true"
-                  onChange={e => setOrigin(e.target.value)}
+                  onChange={setOrigin}
+                  onSelect={handleOriginSelect}
                   onBlur={handleOriginBlur}
-                  className="exp-input"
                 />
               </ExpField>
               <ExpField label="Destination" htmlFor="trip-destination" required marker="B">
-                <input
+                <LocationAutocomplete
                   id="trip-destination"
-                  type="text"
                   value={destination}
                   placeholder="Paris, France"
                   aria-required="true"
-                  onChange={e => setDestination(e.target.value)}
+                  onChange={setDestination}
+                  onSelect={handleDestinationSelect}
                   onBlur={handleDestinationBlur}
-                  className="exp-input"
                 />
               </ExpField>
             </div>
