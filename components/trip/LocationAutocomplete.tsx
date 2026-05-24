@@ -51,10 +51,12 @@ export default function LocationAutocomplete({
   const listboxId = useId();
   const getOptionId = (i: number) => `${listboxId}-opt-${i}`;
 
+  // Mount guard for portal
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Position dropdown under the input
   const updateDropdownPosition = useCallback(() => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
@@ -67,6 +69,7 @@ export default function LocationAutocomplete({
     });
   }, []);
 
+  // Fetch suggestions
   const fetchSuggestions = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
       setSuggestions([]);
@@ -75,6 +78,7 @@ export default function LocationAutocomplete({
       return;
     }
 
+    // Cancel previous in-flight request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
@@ -101,6 +105,7 @@ export default function LocationAutocomplete({
     }
   }, [updateDropdownPosition]);
 
+  // Debounced input handler
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const q = e.target.value;
     onChange(q);
@@ -110,6 +115,7 @@ export default function LocationAutocomplete({
     debounceRef.current = setTimeout(() => fetchSuggestions(q), DEBOUNCE_MS);
   }
 
+  // Reposition on scroll/resize while open
   useEffect(() => {
     if (!isOpen) return;
     window.addEventListener('scroll', updateDropdownPosition, true);
@@ -120,6 +126,7 @@ export default function LocationAutocomplete({
     };
   }, [isOpen, updateDropdownPosition]);
 
+  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     function handlePointerDown(e: PointerEvent) {
@@ -168,6 +175,7 @@ export default function LocationAutocomplete({
   }
 
   function handleBlur() {
+    // Delay so click on suggestion can fire first
     setTimeout(() => {
       if (!listboxRef.current?.matches(':focus-within')) {
         setIsOpen(false);
@@ -198,6 +206,7 @@ export default function LocationAutocomplete({
           aria-selected={i === activeIndex}
           className={`autocomplete-option${i === activeIndex ? ' is-active' : ''}`}
           onPointerDown={(e) => {
+            // Prevent blur from firing before click
             e.preventDefault();
             handleSelect(s);
           }}

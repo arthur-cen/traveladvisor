@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
         text: string;
         center: [number, number];
       }) => {
+        // Split "Primary Name, Secondary context" for display
         const parts = feature.place_name.split(', ');
         const primary = parts[0] ?? feature.place_name;
         const secondary = parts.slice(1).join(', ');
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
           id: feature.id,
           placeName: feature.place_name,
           secondaryText: secondary,
+          // Render primary name as text — it's just the feature.text
           primaryText: primary,
           center: feature.center,
         };
