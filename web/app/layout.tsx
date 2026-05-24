@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'TravelAdvisor — AI Trip Planner',
-  description: 'Plan your perfect trip with AI-powered personalized itineraries',
+  title: 'Expedition Planner — TravelAdvisor',
+  description: 'Chart your next expedition. AI-crafted itineraries for the discerning traveler.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

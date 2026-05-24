@@ -2,17 +2,14 @@
 
 import type { Activity } from '@/lib/types';
 
-const TIME_COLORS: Record<string, { bar: string; chip: string; label: string }> = {
-  Morning:   { bar: 'bg-amber-400',   chip: 'bg-amber-50 text-amber-700',    label: '☀️' },
-  Lunch:     { bar: 'bg-emerald-400', chip: 'bg-emerald-50 text-emerald-700', label: '🍽️' },
-  Afternoon: { bar: 'bg-blue-400',    chip: 'bg-blue-50 text-blue-700',      label: '🌤️' },
-  Evening:   { bar: 'bg-purple-400',  chip: 'bg-purple-50 text-purple-700',  label: '🌙' },
-};
-
-const COST_COLORS: Record<string, string> = {
-  '$':   'bg-green-50 text-green-700',
-  '$$':  'bg-yellow-50 text-yellow-700',
-  '$$$': 'bg-orange-50 text-orange-700',
+const TIME_META: Record<
+  string,
+  { icon: string; accent: string; eyebrow: string }
+> = {
+  Morning:   { icon: '☀',  accent: 'var(--amber-glow)', eyebrow: 'Dawn' },
+  Lunch:     { icon: '⊹',  accent: 'var(--forest-light)', eyebrow: 'Midday' },
+  Afternoon: { icon: '◐',  accent: 'var(--amber)',      eyebrow: 'Afternoon' },
+  Evening:   { icon: '☾',  accent: 'var(--bone)',       eyebrow: 'Dusk' },
 };
 
 const COST_LABELS: Record<string, string> = {
@@ -21,37 +18,84 @@ const COST_LABELS: Record<string, string> = {
   '$$$': 'Premium cost',
 };
 
+const COST_META: Record<string, { color: string; tag: string }> = {
+  '$':   { color: 'var(--forest-light)', tag: 'Modest' },
+  '$$':  { color: 'var(--amber)',        tag: 'Mid' },
+  '$$$': { color: 'var(--amber-glow)',   tag: 'Premium' },
+};
+
 export default function ActivityCard({ activity }: { activity: Activity }) {
-  const colors = TIME_COLORS[activity.time] ?? TIME_COLORS['Afternoon'];
+  const meta = TIME_META[activity.time] ?? TIME_META['Afternoon'];
+  const costMeta = activity.cost ? COST_META[activity.cost] : undefined;
 
   return (
-    <div className="flex gap-3 bg-white rounded-card shadow-card hover:shadow-card-hover transition-shadow duration-200 overflow-hidden group">
-      <div aria-hidden="true" className={`w-1 flex-shrink-0 ${colors.bar} rounded-l-card`} />
-
-      <div className="flex-1 py-3 pr-3">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${colors.chip}`}>
-            <span aria-hidden="true">{colors.label}</span>
-            {activity.time}
+    <article
+      className="relative flex gap-3 group transition-all duration-200"
+      style={{
+        background: 'var(--charcoal-mid)',
+        border: '1px solid var(--charcoal-light)',
+        borderRadius: '2px',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
+      {/* Time accent rail */}
+      <div
+        aria-hidden="true"
+        className="flex-shrink-0 flex flex-col items-center justify-start pt-3 pb-3 px-2"
+        style={{
+          background: 'rgba(0,0,0,0.3)',
+          borderRight: '1px solid var(--charcoal-light)',
+          minWidth: 52,
+        }}
+      >
+        <span style={{ color: meta.accent, fontSize: 16 }}>{meta.icon}</span>
+        <span
+          className="exp-eyebrow mt-1.5 text-center leading-none"
+          style={{ color: meta.accent, fontSize: '0.55rem', letterSpacing: '0.15em' }}
+        >
+          {activity.time}
+        </span>
+        {activity.duration && (
+          <span
+            className="mono text-[9px] mt-1.5"
+            style={{ color: 'var(--bone)' }}
+          >
+            {activity.duration}
           </span>
-          {activity.duration && (
-            <span className="text-xs text-foggy">· {activity.duration}</span>
-          )}
-          {activity.cost && (
+        )}
+      </div>
+
+      <div className="flex-1 py-3 pr-3 min-w-0">
+        <div className="flex items-start gap-2 mb-1">
+          <h4
+            className="display-serif text-sm leading-snug flex-1"
+            style={{ color: 'var(--cream-text)' }}
+          >
+            {activity.name}
+          </h4>
+          {activity.cost && costMeta && (
             <span
               aria-label={COST_LABELS[activity.cost] ?? activity.cost}
-              className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${COST_COLORS[activity.cost] ?? 'bg-gray-100 text-gray-600'}`}
+              className="exp-eyebrow flex-shrink-0 px-1.5 py-0.5"
+              style={{
+                color: costMeta.color,
+                border: `1px solid ${costMeta.color}`,
+                borderRadius: '2px',
+                fontSize: '0.55rem',
+                opacity: 0.85,
+              }}
             >
               {activity.cost}
             </span>
           )}
         </div>
-
-        <p className="font-semibold text-hof text-sm leading-snug mb-0.5 group-hover:text-rausch transition-colors">
-          {activity.name}
+        <p
+          className="text-xs leading-relaxed"
+          style={{ color: 'var(--cream-dim)' }}
+        >
+          {activity.description}
         </p>
-        <p className="text-foggy text-xs leading-relaxed">{activity.description}</p>
       </div>
-    </div>
+    </article>
   );
 }
