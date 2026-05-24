@@ -9,6 +9,7 @@
 
 | # | Generator Action | Score | Pass? | Top Feedback |
 |---|---|---|---|---|
+| 1 | Full dark expedition redesign: palette tokens, Playfair/Inter type, compass loader, field journal panels | **8.40/10** | ✅ PASS | Mapbox basemap still stock; form rhythm too uniform; label hierarchy flat |
 
 ## Status
-🔄 Running — iteration 1
+✅ Complete — PASS at iteration 1 (8.40 / 10 ≥ 7.5 threshold)
