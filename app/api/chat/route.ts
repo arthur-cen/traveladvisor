@@ -8,7 +8,7 @@ import type { TripAnswers } from '@/lib/types';
 let systemPrompt: string;
 try {
   systemPrompt = readFileSync(
-    join(process.cwd(), '..', 'prompts', 'system_prompt.txt'),
+    join(process.cwd(), 'prompts', 'system_prompt.txt'),
     'utf-8'
   );
 } catch {
@@ -18,7 +18,10 @@ try {
 }
 
 export async function POST(req: NextRequest) {
-  const { answers } = (await req.json()) as { answers: TripAnswers };
+  const { answers, refinement } = (await req.json()) as {
+    answers: TripAnswers;
+    refinement?: string;
+  };
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response('ANTHROPIC_API_KEY not set', { status: 500 });
@@ -46,6 +49,18 @@ export async function POST(req: NextRequest) {
             role: 'user',
             content: `Please create a travel itinerary based on the following trip details:\n\n${context}`,
           },
+          ...(refinement
+            ? [
+                {
+                  role: 'assistant' as const,
+                  content: 'Here is your itinerary. Let me know if you would like any changes.',
+                },
+                {
+                  role: 'user' as const,
+                  content: `Please adjust the itinerary with this change: ${refinement}\n\nRegenerate the full itinerary with this modification applied. Keep the same format.`,
+                },
+              ]
+            : []),
         ],
       });
 

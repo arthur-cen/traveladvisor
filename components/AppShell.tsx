@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { GeoPoint, Itinerary, TripAnswers } from '@/lib/types';
 import TripForm from './trip/TripForm';
 import ChatPanel from './chat/ChatPanel';
 import ItineraryPanel from './itinerary/ItineraryPanel';
+import PanelHandle from './layout/PanelHandle';
+import { parseItinerary } from '@/lib/parseItinerary';
 import dynamic from 'next/dynamic';
 
 const TravelMap = dynamic(() => import('./map/TravelMap'), { ssr: false });
@@ -17,12 +19,78 @@ export default function AppShell() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
 
+  // Panel state
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [mapExpanded, setMapExpanded] = useState(false);
+
+  // Chat refinement handler — re-generates itinerary with user's modification request
+  const handleChatSend = useCallback(async (message: string) => {
+    if (!tripAnswers || isStreaming) return;
+
+    setIsStreaming(true);
+    setItinerary(null);
+    setStreamText('');
+
+    let accumulated = '';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          answers: tripAnswers,
+          refinement: message,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error('API error');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        setStreamText(accumulated);
+      }
+
+      setIsStreaming(false);
+      const parsed = parseItinerary(accumulated);
+      if (parsed) {
+        setItinerary(parsed);
+      } else {
+        setItinerary({
+          type: 'single-day',
+          destination: tripAnswers.destination,
+          dates: tripAnswers.travelDates,
+          days: [
+            {
+              number: 1,
+              activities: [
+                {
+                  time: 'Morning',
+                  name: 'Your Itinerary',
+                  description: accumulated.slice(0, 200) + '…',
+                },
+              ],
+            },
+          ],
+        });
+      }
+    } catch {
+      setIsStreaming(false);
+    }
+  }, [tripAnswers, isStreaming]);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-charcoal text-cream">
-      {/* LEFT — Form or planning status */}
+      {/* LEFT — Sidebar (collapsible) */}
       <section
         aria-label="Trip planner"
-        className="flex flex-col w-[30%] min-w-[300px] overflow-hidden relative bg-topo"
+        className={`panel-sidebar flex flex-col w-[30%] min-w-[300px] overflow-hidden relative bg-topo${
+          !leftOpen ? ' is-collapsed' : ''
+        }`}
         style={{
           borderRight: '1px solid var(--border-amber)',
         }}
@@ -75,13 +143,20 @@ export default function AppShell() {
         </div>
       </section>
 
-      {/* CENTER — Itinerary column */}
+      {/* Left panel handle — always visible */}
+      <PanelHandle
+        side="left"
+        isOpen={leftOpen}
+        onToggle={() => setLeftOpen(o => !o)}
+        label="Toggle trip planner sidebar"
+      />
+
+      {/* CENTER — Itinerary canvas (auto-expands) */}
       <main
         aria-label="Itinerary"
-        className="flex flex-col w-[33%] min-w-[320px] overflow-hidden relative"
+        className="flex flex-col flex-1 min-w-[320px] overflow-hidden relative"
         style={{
           background: 'var(--charcoal-mid)',
-          borderRight: '1px solid var(--border-amber)',
         }}
       >
         <div
@@ -101,12 +176,27 @@ export default function AppShell() {
             itinerary={itinerary}
             isStreaming={isStreaming}
             streamText={streamText}
+            onChatSend={tripAnswers ? handleChatSend : undefined}
           />
         </div>
       </main>
 
-      {/* RIGHT — Map column */}
-      <aside aria-label="Trip map" className="flex-1 min-w-0 overflow-hidden relative">
+      {/* Map panel handle */}
+      <PanelHandle
+        side="right"
+        isOpen={!mapExpanded}
+        onToggle={() => setMapExpanded(e => !e)}
+        label="Toggle map size"
+      />
+
+      {/* RIGHT — Map column (expandable) */}
+      <aside
+        aria-label="Trip map"
+        className="overflow-hidden relative transition-all duration-300"
+        style={{
+          flex: mapExpanded ? '0 0 55%' : '0 0 30%',
+        }}
+      >
         <TravelMap origin={originPoint} destination={destPoint} />
         {/* Subtle vignette overlay for atmospheric feel */}
         <div

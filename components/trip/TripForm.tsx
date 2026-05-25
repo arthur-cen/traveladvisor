@@ -249,18 +249,10 @@ export default function TripForm({ onSubmit, onDestinationGeocoded, onOriginGeoc
             </ExpField>
 
             <ExpField label="Budget per person" htmlFor="trip-budget" required>
-              <select
-                id="trip-budget"
+              <BudgetSlider
                 value={budget}
-                aria-required="true"
-                onChange={e => setBudget(e.target.value as TripAnswers['budget'])}
-                className="exp-input"
-              >
-                <option value="">Select tier…</option>
-                <option value="budget">⚲ Frugal — under $30 / activity</option>
-                <option value="mid-range">⚲⚲ Mid-range — $30–$100</option>
-                <option value="luxury">⚲⚲⚲ Luxury — no limit</option>
-              </select>
+                onChange={(v) => setBudget(v as TripAnswers['budget'])}
+              />
             </ExpField>
           </SectionBlock>
 
@@ -496,5 +488,50 @@ function ChipToggle({
       )}
       {label}
     </button>
+  );
+}
+
+const BUDGET_STOPS: { value: string; label: string; desc: string }[] = [
+  { value: 'budget', label: 'Frugal', desc: 'Under $30' },
+  { value: 'mid-range', label: 'Mid-range', desc: '$30–$100' },
+  { value: 'luxury', label: 'Luxury', desc: 'No limit' },
+];
+
+function BudgetSlider({
+  value,
+  onChange,
+}: { value: string; onChange: (v: string) => void }) {
+  const idx = BUDGET_STOPS.findIndex(s => s.value === value);
+  const sliderValue = idx >= 0 ? idx : 1;
+
+  return (
+    <div className="budget-slider-wrapper">
+      <input
+        id="trip-budget"
+        type="range"
+        min={0}
+        max={2}
+        step={1}
+        value={sliderValue}
+        aria-required="true"
+        aria-label="Budget per person"
+        aria-valuetext={BUDGET_STOPS[sliderValue].label}
+        className="budget-slider"
+        onChange={e => onChange(BUDGET_STOPS[parseInt(e.target.value)].value)}
+      />
+      <div className="budget-labels" aria-hidden="true">
+        {BUDGET_STOPS.map((stop, i) => (
+          <span
+            key={stop.value}
+            className={`budget-label${i === sliderValue ? ' is-active' : ''}`}
+          >
+            <span style={{ display: 'block' }}>{stop.label}</span>
+            <span style={{ display: 'block', fontSize: '0.55rem', opacity: 0.7, marginTop: 2 }}>
+              {stop.desc}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

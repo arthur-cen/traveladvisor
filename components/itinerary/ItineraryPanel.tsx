@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import type { Itinerary } from '@/lib/types';
-import DayGroup from './DayGroup';
+import ActivityCard from './ActivityCard';
+import ChatInput from '../chat/ChatInput';
 
 type Props = {
   itinerary: Itinerary | null;
   isStreaming?: boolean;
   streamText?: string;
+  onChatSend?: (message: string) => void;
 };
 
-export default function ItineraryPanel({ itinerary, isStreaming, streamText }: Props) {
+export default function ItineraryPanel({ itinerary, isStreaming, streamText, onChatSend }: Props) {
+  const [activeTab, setActiveTab] = useState(0);
+
   /* ─── Empty state ────────────────────────────────────── */
   if (!itinerary && !isStreaming) {
     return (
@@ -108,7 +113,11 @@ export default function ItineraryPanel({ itinerary, isStreaming, streamText }: P
 
   if (!itinerary) return null;
 
-  /* ─── Itinerary view ─────────────────────────────────── */
+  const selectedDay = itinerary.days[activeTab] ?? itinerary.days[0];
+  const hasSummary = itinerary.type === 'multi-day' && itinerary.summary;
+  const hasPractical = itinerary.type === 'single-day' && itinerary.practicalInfo;
+
+  /* ─── Tabbed itinerary view ──────────────────────────── */
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Destination header */}
@@ -135,30 +144,109 @@ export default function ItineraryPanel({ itinerary, isStreaming, streamText }: P
         >
           {itinerary.dates}
         </p>
-        {/* Decorative double rule */}
-        <div
-          className="absolute left-5 right-5 bottom-0"
-          aria-hidden="true"
-          style={{
-            height: '2px',
-            background:
-              'linear-gradient(90deg, var(--amber) 0%, var(--amber) 30%, transparent 32%, transparent 35%, var(--border-amber) 37%, var(--border-amber) 100%)',
-          }}
-        />
       </div>
 
-      {/* Days */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-topo-faint">
-        {itinerary.days.map((day, i) => (
-          <DayGroup key={day.number} day={day} defaultOpen={i === 0} />
-        ))}
-
-        {/* Summary / Practical Info */}
-        {itinerary.type === 'multi-day' && itinerary.summary && (
-          <SummarySection summary={itinerary.summary} />
+      {/* Day tabs */}
+      <div className="day-tabs" role="tablist" aria-label="Itinerary days">
+        {itinerary.days.map((day, i) => {
+          const dayLabel = String(day.number).padStart(2, '0');
+          return (
+            <button
+              key={day.number}
+              role="tab"
+              aria-selected={i === activeTab}
+              aria-controls={`day-panel-${day.number}`}
+              id={`day-tab-${day.number}`}
+              className={`day-tab${i === activeTab ? ' is-active' : ''}`}
+              onClick={() => setActiveTab(i)}
+            >
+              <span className="day-tab__number">{dayLabel}</span>
+              {day.theme && (
+                <span className="hidden sm:inline">{day.theme}</span>
+              )}
+              {!day.theme && <span>Day {dayLabel}</span>}
+            </button>
+          );
+        })}
+        {(hasSummary || hasPractical) && (
+          <button
+            role="tab"
+            aria-selected={activeTab === itinerary.days.length}
+            aria-controls="overview-panel"
+            id="overview-tab"
+            className={`day-tab${activeTab === itinerary.days.length ? ' is-active' : ''}`}
+            onClick={() => setActiveTab(itinerary.days.length)}
+          >
+            <span aria-hidden="true" style={{ marginRight: '0.3rem' }}>§</span>
+            Overview
+          </button>
         )}
-        {itinerary.type === 'single-day' && itinerary.practicalInfo && (
-          <PracticalSection info={itinerary.practicalInfo} />
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-topo-faint">
+        {activeTab < itinerary.days.length && selectedDay ? (
+          <div
+            role="tabpanel"
+            id={`day-panel-${selectedDay.number}`}
+            aria-labelledby={`day-tab-${selectedDay.number}`}
+            className="flex flex-col gap-2 anim-fade-up"
+          >
+            {/* Day theme heading */}
+            {selectedDay.theme && (
+              <div className="flex items-center gap-2 mb-1">
+                <span className="exp-eyebrow" style={{ color: 'var(--amber)' }}>
+                  <span aria-hidden="true" className="mr-1">◇</span>
+                  {selectedDay.theme}
+                </span>
+              </div>
+            )}
+
+            {/* Activity cards */}
+            {selectedDay.activities.map((activity) => (
+              <ActivityCard
+                key={`${activity.time}-${activity.name}`}
+                activity={activity}
+              />
+            ))}
+
+            {/* Stay info */}
+            {selectedDay.stay && (
+              <div
+                className="flex items-start gap-2 mt-1 px-3 py-2.5"
+                style={{
+                  background: 'rgba(212,168,83,0.04)',
+                  border: '1px dashed var(--border-amber)',
+                  borderRadius: '2px',
+                }}
+              >
+                <span aria-hidden="true" style={{ color: 'var(--amber)' }}>◈</span>
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{ color: 'var(--cream-dim)' }}
+                >
+                  <span
+                    className="exp-eyebrow mr-1.5"
+                    style={{ color: 'var(--amber)' }}
+                  >
+                    Encampment
+                  </span>
+                  {selectedDay.stay}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Overview tab panel */
+          <div
+            role="tabpanel"
+            id="overview-panel"
+            aria-labelledby="overview-tab"
+            className="flex flex-col gap-3 anim-fade-up"
+          >
+            {hasSummary && <SummarySection summary={itinerary.summary!} />}
+            {hasPractical && <PracticalSection info={itinerary.practicalInfo!} />}
+          </div>
         )}
 
         {/* Final field stamp */}
@@ -171,6 +259,15 @@ export default function ItineraryPanel({ itinerary, isStreaming, streamText }: P
           </p>
         </div>
       </div>
+
+      {/* Inline chat dock at bottom */}
+      {onChatSend && (
+        <ChatInput
+          onSend={onChatSend}
+          disabled={!!isStreaming}
+          placeholder={'Adjust your expedition — e.g. "swap Day 2 lunch for seafood"…'}
+        />
+      )}
     </div>
   );
 }

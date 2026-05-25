@@ -8,7 +8,11 @@ type Props = {
   placeholder?: string;
 };
 
-export default function ChatInput({ onSend, disabled, placeholder = 'Type your answer…' }: Props) {
+export default function ChatInput({
+  onSend,
+  disabled,
+  placeholder = 'Adjust your expedition — e.g. "swap Day 2 lunch for seafood"…',
+}: Props) {
   const [value, setValue] = useState('');
 
   function handleSend() {
@@ -26,7 +30,7 @@ export default function ChatInput({ onSend, disabled, placeholder = 'Type your a
   }
 
   return (
-    <div className="flex items-end gap-2 p-3 border-t border-border bg-white">
+    <div className="canvas-chat-dock">
       <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -34,7 +38,7 @@ export default function ChatInput({ onSend, disabled, placeholder = 'Type your a
         disabled={disabled}
         placeholder={placeholder}
         rows={1}
-        className="flex-1 resize-none rounded-xl border border-border px-3 py-2 text-sm text-hof placeholder:text-foggy focus:outline-none focus:border-rausch focus:ring-1 focus:ring-rausch disabled:opacity-50 transition-colors overflow-hidden"
+        className="exp-input"
         style={{ minHeight: '38px', maxHeight: '120px' }}
         onInput={(e) => {
           const el = e.currentTarget;
@@ -45,10 +49,10 @@ export default function ChatInput({ onSend, disabled, placeholder = 'Type your a
       <button
         onClick={handleSend}
         disabled={!value.trim() || disabled}
-        className="flex-shrink-0 w-9 h-9 rounded-xl bg-rausch hover:bg-[#e04f54] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-        aria-label="Send"
+        className="canvas-chat-send"
+        aria-label="Send refinement"
       >
-        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>
       </button>
