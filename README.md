@@ -40,7 +40,7 @@ An AI-powered expedition planning web app. Fill in where you're going, pick your
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/TravelAdvisor.git
+git clone https://github.com/arthur-cen/TravelAdvisor.git
 cd TravelAdvisor
 ```
 
