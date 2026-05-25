@@ -23,15 +23,19 @@ function parseSingleDay(text: string): Itinerary {
   for (let i = 0; i < timeBlocks.length; i++) {
     const block = timeBlocks[i];
     const nextBlock = timeBlocks[i + 1];
+    // Matches block header (e.g. Morning, **Morning**:, Morning (9-12)) and lookahead to next block or practical section
     const blockPattern = new RegExp(
-      `${block}\\s*\\([^)]*\\)([\\s\\S]*?)(?=${nextBlock ? `${nextBlock}\\s*\\(` : '== Practical'}|$)`,
+      `(?:[-*+]\\s*)?(?:\\*\\*)?${block}(?:\\*\\*)?\\s*(?:\\([^)]*\\))?\\s*(?::|->)?([\\s\\S]*?)(?=(?:(?:[-*+]\\s*)?(?:\\*\\*)?${
+        nextBlock ? nextBlock : '== Practical'
+      })|$)`,
       'i'
     );
     const blockMatch = text.match(blockPattern);
     if (!blockMatch) continue;
 
     const blockText = blockMatch[1];
-    const itemPattern = /\*\s+(.+?)\s+[—–-]\s+(.+?)(?:\s*\(~([^)]+)\))?(?:\s*,\s*(\$+))?$/gm;
+    // Matches item bullet like * or - or +
+    const itemPattern = /^\s*[-*+]\s+(.+?)\s+[—–-]\s+(.+?)(?:\s*\(~([^)]+)\))?(?:\s*,\s*(\$+))?$/gm;
     let m;
     while ((m = itemPattern.exec(blockText)) !== null) {
       activities.push({
@@ -69,7 +73,10 @@ function parseMultiDay(text: string): Itinerary {
   const destination = headerMatch?.[2]?.trim() ?? 'Your Destination';
   const dates = headerMatch?.[3]?.trim() ?? '';
 
-  const daySections = text.split(/(?=--- Day \d+:)/g).filter((s) => s.includes('--- Day'));
+  // Split by day headers. Matches '--- Day N:', '### Day N', '## Day N', or 'Day N:'
+  const daySections = text
+    .split(/(?=(?:---|###|##|#)?\s*Day\s+\d+)/gi)
+    .filter((s) => /Day\s+\d+/i.test(s));
   const days: Day[] = daySections.map((section) => parseDaySection(section));
 
   const summaryMatch = text.match(/== Trip Summary ==([\s\S]*?)(?:$)/i);
@@ -97,23 +104,25 @@ function parseMultiDay(text: string): Itinerary {
 }
 
 function parseDaySection(section: string): Day {
-  const headerMatch = section.match(/--- Day (\d+):\s*(.+?)\s*---/);
+  // Matches '--- Day N: Theme ---', '### Day N: Theme', or 'Day N - Theme'
+  const headerMatch = section.match(/(?:---|###|##|#)?\s*Day\s*(\d+)\s*(?::|-)?\s*(.+?)\s*(?:---|#|\n|$)/i);
   const number = parseInt(headerMatch?.[1] ?? '1', 10);
   const theme = headerMatch?.[2]?.trim();
 
   const activities: Activity[] = [];
 
-  const slots: Array<{ label: string; pattern: RegExp }> = [
-    { label: 'Morning', pattern: /Morning\s+->\s*(.+?)(?:\n|$)/i },
-    { label: 'Afternoon', pattern: /Afternoon\s+->\s*(.+?)(?:\n|$)/i },
-    { label: 'Evening', pattern: /Evening\s+->\s*(.+?)(?:\n|$)/i },
-  ];
+  const slots = ['Morning', 'Afternoon', 'Evening'];
 
-  for (const { label, pattern } of slots) {
+  for (const slot of slots) {
+    // Matches 'Morning   ->', '- **Morning**:', '* Morning ->', 'Morning:'
+    const pattern = new RegExp(
+      `(?:[-*+]\\s*)?(?:\\*\\*)?${slot}(?:\\*\\*)?\\s*(?:->|:|—|-)\\s*(.+?)(?:\\n|$)`,
+      'i'
+    );
     const m = section.match(pattern);
     if (m) {
       activities.push({
-        time: label,
+        time: slot,
         name: extractActivityName(m[1]),
         description: m[1].trim(),
       });
