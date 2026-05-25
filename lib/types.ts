@@ -30,6 +30,7 @@ export type Activity = {
 export type Day = {
   number: number;
   theme?: string;
+  location?: string;
   activities: Activity[];
   stay?: string;
 };

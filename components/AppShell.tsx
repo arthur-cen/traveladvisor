@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GeoPoint, Itinerary, TripAnswers } from '@/lib/types';
 import TripForm from './trip/TripForm';
 import ChatPanel from './chat/ChatPanel';
@@ -21,7 +21,55 @@ export default function AppShell() {
 
   // Panel state
   const [leftOpen, setLeftOpen] = useState(true);
-  const [mapExpanded, setMapExpanded] = useState(false);
+  const [mapOpen, setMapOpen] = useState(true);
+
+  // Hoisted active itinerary tab state
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Coordinates of the active day location (geocoded dynamic map target)
+  const [activeLocationPoint, setActiveLocationPoint] = useState<GeoPoint>();
+
+  // Geocode active day location when activeTab or itinerary changes
+  useEffect(() => {
+    if (!itinerary) {
+      setActiveLocationPoint(undefined);
+      return;
+    }
+
+    let locationName = '';
+    if (itinerary.type === 'multi-day' && activeTab < itinerary.days.length) {
+      locationName = itinerary.days[activeTab]?.location || '';
+    }
+
+    if (!locationName) {
+      setActiveLocationPoint(undefined);
+      return;
+    }
+
+    let active = true;
+    async function fetchLocation() {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(locationName)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active) {
+          setActiveLocationPoint({
+            lat: data.latitude,
+            lng: data.longitude,
+            placeName: data.placeName,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to geocode day location:', err);
+      }
+    }
+
+    fetchLocation();
+
+    return () => {
+      active = false;
+    };
+  }, [itinerary, activeTab]);
 
   // Chat refinement handler — re-generates itinerary with user's modification request
   const handleChatSend = useCallback(async (message: string) => {
@@ -30,6 +78,7 @@ export default function AppShell() {
     setIsStreaming(true);
     setItinerary(null);
     setStreamText('');
+    setActiveTab(0); // Reset day tab to first day when refining
 
     let accumulated = '';
 
@@ -92,7 +141,7 @@ export default function AppShell() {
           !leftOpen ? ' is-collapsed' : ''
         }`}
         style={{
-          borderRight: '1px solid var(--border-amber)',
+          borderRight: leftOpen ? '1px solid var(--border-amber)' : 'none',
         }}
       >
         {/* Brand header */}
@@ -135,6 +184,8 @@ export default function AppShell() {
                 setItinerary(parsed);
                 setIsStreaming(false);
                 setStreamText('');
+                setLeftOpen(false); // Collapse sidebar automatically when planning is done
+                setActiveTab(0); // Reset day tab to first day
               }}
               onStreamUpdate={setStreamText}
               onStreamingChange={setIsStreaming}
@@ -176,6 +227,8 @@ export default function AppShell() {
             itinerary={itinerary}
             isStreaming={isStreaming}
             streamText={streamText}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             onChatSend={tripAnswers ? handleChatSend : undefined}
           />
         </div>
@@ -184,20 +237,21 @@ export default function AppShell() {
       {/* Map panel handle */}
       <PanelHandle
         side="right"
-        isOpen={!mapExpanded}
-        onToggle={() => setMapExpanded(e => !e)}
-        label="Toggle map size"
+        isOpen={mapOpen}
+        onToggle={() => setMapOpen(o => !o)}
+        label="Toggle map panel visibility"
       />
 
-      {/* RIGHT — Map column (expandable) */}
+      {/* RIGHT — Map column (collapsible) */}
       <aside
         aria-label="Trip map"
         className="overflow-hidden relative transition-all duration-300"
         style={{
-          flex: mapExpanded ? '0 0 55%' : '0 0 30%',
+          flex: mapOpen ? '0 0 30%' : '0 0 0%',
+          borderLeft: mapOpen ? '1px solid var(--border-amber)' : 'none',
         }}
       >
-        <TravelMap origin={originPoint} destination={destPoint} />
+        <TravelMap origin={originPoint} destination={destPoint} activeLocation={activeLocationPoint} />
         {/* Subtle vignette overlay for atmospheric feel */}
         <div
           aria-hidden="true"

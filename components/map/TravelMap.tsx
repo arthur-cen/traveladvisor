@@ -7,9 +7,10 @@ import type { GeoPoint } from '@/lib/types';
 type Props = {
   origin?: GeoPoint;
   destination?: GeoPoint;
+  activeLocation?: GeoPoint;
 };
 
-export default function TravelMap({ origin, destination }: Props) {
+export default function TravelMap({ origin, destination, activeLocation }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -82,20 +83,30 @@ export default function TravelMap({ origin, destination }: Props) {
         markersRef.current.push(marker);
       }
 
-      // Fit bounds if both present
-      if (origin && destination) {
-        const bounds = [
-          [Math.min(origin.lng, destination.lng) - 0.5, Math.min(origin.lat, destination.lat) - 0.5],
-          [Math.max(origin.lng, destination.lng) + 0.5, Math.max(origin.lat, destination.lat) + 0.5],
-        ] as [[number, number], [number, number]];
-        mapRef.current.fitBounds(bounds, { padding: 80, duration: 1000 });
-      } else if (destination) {
-        mapRef.current.flyTo({ center: [destination.lng, destination.lat], zoom: 9, duration: 1200 });
+      if (activeLocation) {
+        const el = createMarkerEl('#D4A853', '🧭', `Day Location: ${activeLocation?.placeName ?? 'active'}`);
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([activeLocation.lng, activeLocation.lat])
+          .addTo(mapRef.current);
+        markersRef.current.push(marker);
+
+        mapRef.current.flyTo({ center: [activeLocation.lng, activeLocation.lat], zoom: 11, duration: 1200 });
+      } else {
+        // Fit bounds if both present
+        if (origin && destination) {
+          const bounds = [
+            [Math.min(origin.lng, destination.lng) - 0.5, Math.min(origin.lat, destination.lat) - 0.5],
+            [Math.max(origin.lng, destination.lng) + 0.5, Math.max(origin.lat, destination.lat) + 0.5],
+          ] as [[number, number], [number, number]];
+          mapRef.current.fitBounds(bounds, { padding: 80, duration: 1000 });
+        } else if (destination) {
+          mapRef.current.flyTo({ center: [destination.lng, destination.lat], zoom: 9, duration: 1200 });
+        }
       }
     }
 
     updateMarkers();
-  }, [origin, destination]);
+  }, [origin, destination, activeLocation]);
 
   const hasDestination = !!destination;
 

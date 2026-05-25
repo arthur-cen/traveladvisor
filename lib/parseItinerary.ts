@@ -109,6 +109,10 @@ function parseDaySection(section: string): Day {
   const number = parseInt(headerMatch?.[1] ?? '1', 10);
   const theme = headerMatch?.[2]?.trim();
 
+  // Parse Day location if provided, e.g. "Location: Versailles, France"
+  const locationMatch = section.match(/Location:\s*(.+?)(?:\n|$)/i);
+  const location = locationMatch?.[1]?.trim();
+
   const activities: Activity[] = [];
 
   const slots = ['Morning', 'Afternoon', 'Evening'];
@@ -131,7 +135,7 @@ function parseDaySection(section: string): Day {
 
   const stayMatch = section.match(/Stay:\s*(.+?)(?:\n|$)/i);
 
-  return { number, theme, activities, stay: stayMatch?.[1]?.trim() };
+  return { number, theme, location, activities, stay: stayMatch?.[1]?.trim() };
 }
 
 function extractActivityName(line: string): string {

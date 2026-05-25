@@ -54,12 +54,14 @@ MULTI-DAY FORMAT  (use when trip is 2 or more days)
 == [N]-Day Itinerary: [Destination] | [Start Date] - [End Date] ==
 
 --- Day 1: [Descriptive theme, e.g. "Arrival & Historic Center"] ---
+Location: [Specific City / Town for the day, e.g., "Paris, France"]
 Morning   -> [Specific activity + place name + brief note]
 Afternoon -> [Specific activity + place name + brief note]
 Evening   -> [Dinner recommendation + optional after-dinner activity]
 Stay: [Recommended neighborhood or hotel name and why it's a good base]
 
 --- Day 2: [Theme] ---
+Location: [Specific City / Town for the day, e.g., "Versailles, France"]
 Morning   -> [Activity]
 Afternoon -> [Activity]
 Evening   -> [Dinner + activity]
@@ -68,6 +70,7 @@ Stay: [Accommodation note if changing, otherwise omit]
 [Repeat structure for every day]
 
 --- Day [N]: [e.g. "Final Morning & Departure"] ---
+Location: [Specific City / Town for the day, e.g., "Paris, France"]
 Morning   -> [Last activity before checkout/departure]
 Afternoon -> [Departure logistics or optional activity if time allows]
 

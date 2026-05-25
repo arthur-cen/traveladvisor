@@ -117,6 +117,30 @@ function getMockResponse(answers: TripAnswers, refinement?: string): string {
   const destination = answers.destination || 'Paris';
   const dates = answers.travelDates || 'May 25 - May 28';
 
+  // Helper to get varied locations for mock testing
+  const getLoc = (dayNum: number): string => {
+    const destLower = destination.toLowerCase();
+    if (destLower.includes('paris')) {
+      if (dayNum === 1) return 'Paris, France';
+      if (dayNum === 2) return 'Versailles, France';
+      if (dayNum === 3) return 'Giverny, France';
+      return 'Paris, France';
+    }
+    if (destLower.includes('london')) {
+      if (dayNum === 1) return 'London, United Kingdom';
+      if (dayNum === 2) return 'Windsor, United Kingdom';
+      if (dayNum === 3) return 'Greenwich, United Kingdom';
+      return 'London, United Kingdom';
+    }
+    if (destLower.includes('tokyo')) {
+      if (dayNum === 1) return 'Tokyo, Japan';
+      if (dayNum === 2) return 'Kamakura, Japan';
+      if (dayNum === 3) return 'Yokohama, Japan';
+      return 'Tokyo, Japan';
+    }
+    return `${destination}`;
+  };
+
   if (refinement) {
     if (days === 1) {
       return `== Day Trip: ${destination} on ${dates} ==
@@ -144,6 +168,7 @@ Evening (6:00 PM onwards)
       return `== ${days}-Day Itinerary: ${destination} | ${dates} ==
 
 --- Day 1: Refined Overview ---
+Location: ${getLoc(1)}
 Morning   -> Refined Activity: ${refinement}
 Afternoon -> Visit the historic landmark site
 Evening   -> Enjoy dinner at a cozy local cafe
@@ -152,6 +177,7 @@ Stay: Historic District
 ${Array.from({ length: days - 1 })
   .map(
     (_, i) => `--- Day ${i + 2}: Standard Exploration ---
+Location: ${getLoc(i + 2)}
 Morning   -> Explore neighborhood gardens and paths
 Afternoon -> Visit local museums and galleries
 Evening   -> Dine at traditional food stalls
@@ -196,12 +222,14 @@ Evening (6:00 PM onwards)
   return `== ${days}-Day Itinerary: ${destination} | ${dates} ==
 
 --- Day 1: Historic Exploration ---
+Location: ${getLoc(1)}
 Morning   -> Visit the historic cathedral and old town squares
 Afternoon -> Take a guided walking tour of the main landmarks
 Evening   -> Traditional local dinner at a family-run tavern
 Stay: Historic Quarter
 
 --- Day 2: Art and Culture ---
+Location: ${getLoc(2)}
 Morning   -> Browse the collections at the modern art museum
 Afternoon -> Explore the local boutique shops and cafes
 Evening   -> Casual dining followed by a theater show
@@ -212,6 +240,7 @@ ${
     ? Array.from({ length: days - 2 })
         .map(
           (_, i) => `--- Day ${i + 3}: Scenic Highlights ---
+Location: ${getLoc(i + 3)}
 Morning   -> Take a day trip to the nearby palace or castle ruins
 Afternoon -> Walk through the palace gardens and lake pathways
 Evening   -> Relaxing dinner at a lakeside restaurant

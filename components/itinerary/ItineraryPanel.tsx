@@ -10,10 +10,18 @@ type Props = {
   isStreaming?: boolean;
   streamText?: string;
   onChatSend?: (message: string) => void;
+  activeTab: number;
+  setActiveTab: (tab: number) => void;
 };
 
-export default function ItineraryPanel({ itinerary, isStreaming, streamText, onChatSend }: Props) {
-  const [activeTab, setActiveTab] = useState(0);
+export default function ItineraryPanel({
+  itinerary,
+  isStreaming,
+  streamText,
+  onChatSend,
+  activeTab,
+  setActiveTab,
+}: Props) {
 
   /* ─── Empty state ────────────────────────────────────── */
   if (!itinerary && !isStreaming) {
